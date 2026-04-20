@@ -1,0 +1,6 @@
+member,clm,claim_total,service_dt,doctor,note
+M2001,CLM-1,199.95,01/12/2025,D12,ok
+M2002,CLM-2,abc,not-a-date,D77,bad amount/date
+,CLM-3,0,2025-01-15,,missing member/provider
+M2004,,25.2,2025/01/16,D99,missing claim id
+M2005,CLM-5,-17,2025-13-01,D01,invalid month
