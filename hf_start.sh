@@ -9,4 +9,6 @@ export API_BASE="http://127.0.0.1:8000"
 python -m streamlit run app.py \
   --server.address 0.0.0.0 \
   --server.port "${PORT:-7860}" \
-  --server.headless true
+  --server.headless true \
+  --server.enableCORS false \
+  --server.enableXsrfProtection false
