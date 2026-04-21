@@ -138,5 +138,81 @@ class AIService:
             )
         return suggestions
 
+    def chat_about_data(self, context: Dict[str, Any], messages: List[Dict[str, str]]) -> str:
+        if not messages:
+            return "Ask me anything about your data, mappings, onboarding workflow, or next steps."
+
+        user_message = messages[-1].get("content", "").lower()
+        if not self.client:
+            return self._heuristic_chat(user_message, context)
+
+        try:
+            prompt = (
+                "You are a general-purpose operations copilot for Daffodil implementation teams. "
+                "You can answer broad questions, but ground operational advice in provided context. "
+                "Daffodil accepted schema is: "
+                f"{STANDARD_SCHEMA}. "
+                "If context is missing, say what is missing and suggest what to run/upload next. "
+                "Keep answers concise and practical."
+            )
+            response = self.client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "system", "content": json.dumps(context)},
+                    *messages,
+                ],
+                temperature=0.2,
+            )
+            return (response.choices[0].message.content or "").strip() or self._heuristic_chat(user_message, context)
+        except Exception:
+            logger.exception("Copilot chat failed, using heuristic fallback")
+            return self._heuristic_chat(user_message, context)
+
+    def _heuristic_chat(self, user_message: str, context: Dict[str, Any]) -> str:
+        readiness = context.get("readiness_score")
+        validation_errors = context.get("validation_error_count")
+        unmapped = context.get("unmapped_count", 0)
+        low_conf = context.get("low_confidence_count", 0)
+        columns = context.get("columns", [])
+        schema_text = ", ".join(STANDARD_SCHEMA)
+
+        if "next" in user_message or "step" in user_message:
+            steps = []
+            if readiness is None:
+                steps.append("run readiness assessment")
+            if unmapped or low_conf:
+                steps.append("review low-confidence mappings and accept high-confidence fields")
+            if validation_errors is None or validation_errors > 0:
+                steps.append("run validation and resolve remaining errors")
+            steps.append("generate go-live report")
+            return "Recommended next steps: " + ", then ".join(steps) + "."
+
+        if "format" in user_message or "schema" in user_message or "daffodil" in user_message:
+            return f"Daffodil accepted format is: {schema_text}."
+
+        if "column" in user_message or "field" in user_message:
+            if columns:
+                return f"Current uploaded columns are: {', '.join(columns)}."
+            return "No file columns are available yet. Upload a file so I can analyze fields."
+
+        if "mapping" in user_message:
+            return f"Current mapping health: {unmapped} unmapped fields and {low_conf} low-confidence fields."
+
+        if "validation" in user_message or "error" in user_message:
+            if validation_errors is None:
+                return "Validation has not been run yet. Run validation to identify required-field, date, and numeric issues."
+            return f"Validation currently shows {validation_errors} errors. Resolve those and rerun validation."
+
+        if "readiness" in user_message:
+            if readiness is None:
+                return "Readiness score is not available yet. Run readiness assessment first."
+            return f"Readiness score is {readiness}. Higher than 80 is generally go-live favorable."
+
+        return (
+            "I can help with data questions, Daffodil schema, mapping strategy, validation, readiness, and onboarding planning. "
+            "Ask any question and I will use available context."
+        )
+
 
 ai_service = AIService()
