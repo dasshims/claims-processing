@@ -11,13 +11,13 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
 
-  frontend:
+  web:
     build:
-      context: ./frontend
+      context: ./web
       dockerfile: Dockerfile
     ports:
-      - "8501:8501"
+      - "3000:3000"
     environment:
-      - API_BASE=${API_BASE:-http://backend:8000}
+      - API_BASE_URL=${API_BASE_URL:-http://backend:8000}
     depends_on:
       - backend
