@@ -78,6 +78,7 @@ export default function Home() {
   ]);
   const [chatOpen, setChatOpen] = useState(false);
   const [suggestedQuestions, setSuggestedQuestions] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -261,6 +262,7 @@ export default function Home() {
     const nextMessages = [...chatMessages, { role: "user", content: text }];
     setChatMessages(nextMessages);
     setChatInput("");
+    setChatLoading(true);
     try {
       const res = await fetch(`${API_BASE}/copilot-chat`, {
         method: "POST",
@@ -283,6 +285,8 @@ export default function Home() {
       setChatMessages((prev) => [...prev, { role: "assistant", content: data.answer }]);
     } catch (e) {
       setChatMessages((prev) => [...prev, { role: "assistant", content: "I could not process that request right now." }]);
+    } finally {
+      setChatLoading(false);
     }
   }
 
@@ -293,6 +297,7 @@ export default function Home() {
     const nextMessages = [...chatMessages, { role: "user", content: text }];
     setChatMessages(nextMessages);
     setChatInput("");
+    setChatLoading(true);
     try {
       const res = await fetch(`${API_BASE}/copilot-chat`, {
         method: "POST",
@@ -315,6 +320,8 @@ export default function Home() {
       setChatMessages((prev) => [...prev, { role: "assistant", content: data.answer }]);
     } catch (e) {
       setChatMessages((prev) => [...prev, { role: "assistant", content: "I could not process that request right now." }]);
+    } finally {
+      setChatLoading(false);
     }
   }
 
@@ -444,6 +451,16 @@ export default function Home() {
                   <b>{m.role === "user" ? "You" : "Copilot"}:</b> {m.content}
                 </div>
               ))}
+              {chatLoading && (
+                <div className="chat-msg chat-assistant chat-typing">
+                  <b>Copilot:</b>
+                  <span className="typing-dots" aria-label="Typing">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                </div>
+              )}
             </div>
             )}
             {chatOpen && (
