@@ -2,9 +2,9 @@ import Link from "next/link";
 
 const DEMO_CUSTOMERS = [
   { id: "c1", customer_name: "X insurance", status: "In Progress", owner: "Sid", integration_type: "Claims File Feed", go_live_date: "2026-05-15" },
-  { id: "c2", customer_name: "Orchid Health", status: "At Risk", owner: "Shuo", integration_type: "API Integration", go_live_date: "2026-05-28" },
-  { id: "c3", customer_name: "Pioneer Payer", status: "On Track", owner: "Ravi", integration_type: "SFTP Batch", go_live_date: "2026-06-10" },
-  { id: "c4", customer_name: "Harbor Health Plan", status: "On Track", owner: "Ananya", integration_type: "HL7/FHIR", go_live_date: "2026-06-25" },
+  { id: "c2", customer_name: "Orchid Health", status: "At Risk", owner: "Navin", integration_type: "API Integration", go_live_date: "2026-05-28" },
+  { id: "c3", customer_name: "Pioneer Payer", status: "On Track", owner: "Navin", integration_type: "SFTP Batch", go_live_date: "2026-06-10" },
+  { id: "c4", customer_name: "Harbor Health Plan", status: "On Track", owner: "Navin", integration_type: "HL7/FHIR", go_live_date: "2026-06-25" },
 ];
 
 export default function ManageCustomers() {

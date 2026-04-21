@@ -11,7 +11,7 @@ const STANDARD_SCHEMA = [
 
 const API_BASE = "/api-proxy";
 const INTEGRATION_TYPES = ["Claims File Feed", "Eligibility Feed", "HL7/FHIR", "SFTP Batch", "API Integration"];
-const OWNERS = ["Sid", "Shuo", "Ananya", "Ravi", "Ops Team"];
+const OWNERS = ["Sid", "Navin", "Adrianne", "Ops Team"];
 
 const EMPTY_WORKSPACE = {
   customer_name: "",
@@ -37,7 +37,7 @@ const DEMO_WORKSPACES = [
     customer_name: "Orchid Health",
     integration_type: "API Integration",
     target_go_live_date: "2026-05-28",
-    owner: "Shuo",
+    owner: "Navin",
     status: "At Risk",
     file_id: null,
   },
@@ -46,7 +46,7 @@ const DEMO_WORKSPACES = [
     customer_name: "Pioneer Payer",
     integration_type: "SFTP Batch",
     target_go_live_date: "2026-06-10",
-    owner: "Ravi",
+    owner: "Navin",
     status: "On Track",
     file_id: null,
   },
