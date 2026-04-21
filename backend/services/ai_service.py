@@ -98,6 +98,18 @@ class AIService:
                         "question": f"Is '{source}' the {target}?",
                     }
                 )
+            elif source and not target:
+                questions.append(
+                    {
+                        "source_column": source,
+                        "proposed_target": "member_id",
+                        "confidence": conf,
+                        "question": (
+                            f"We could not confidently map '{source}'. "
+                            "Should this be mapped to member_id?"
+                        ),
+                    }
+                )
         return questions
 
     def _heuristic_infer(self, columns: List[str]) -> List[Dict[str, Any]]:

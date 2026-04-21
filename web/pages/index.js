@@ -21,6 +21,12 @@ export default function Home() {
   const [questions, setQuestions] = useState([]);
   const [qIndex, setQIndex] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [actionLoading, setActionLoading] = useState({
+    upload: false,
+    infer: false,
+    validate: false,
+    questions: false,
+  });
   const [error, setError] = useState("");
 
   const status = useMemo(
@@ -36,6 +42,7 @@ export default function Home() {
   async function uploadFile() {
     if (!file) return;
     setBusy(true);
+    setActionLoading((s) => ({ ...s, upload: true }));
     setError("");
     try {
       const form = new FormData();
@@ -55,11 +62,13 @@ export default function Home() {
       setError(String(e.message || e));
     } finally {
       setBusy(false);
+      setActionLoading((s) => ({ ...s, upload: false }));
     }
   }
 
   async function inferSchema() {
     setBusy(true);
+    setActionLoading((s) => ({ ...s, infer: true }));
     setError("");
     try {
       const res = await fetch(`${API_BASE}/infer-schema`, {
@@ -79,11 +88,13 @@ export default function Home() {
       setError(String(e.message || e));
     } finally {
       setBusy(false);
+      setActionLoading((s) => ({ ...s, infer: false }));
     }
   }
 
   async function runValidation() {
     setBusy(true);
+    setActionLoading((s) => ({ ...s, validate: true }));
     setError("");
     try {
       const cleanedMapping = {};
@@ -97,31 +108,29 @@ export default function Home() {
         body: JSON.stringify({ file_id: fileId, mapping: cleanedMapping }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setValidation(await res.json());
-    } catch (e) {
-      setError(String(e.message || e));
-    } finally {
-      setBusy(false);
-    }
-  }
+      const validationPayload = await res.json();
+      setValidation(validationPayload);
 
-  async function generateQuestions() {
-    setBusy(true);
-    setError("");
-    try {
-      const res = await fetch(`${API_BASE}/generate-questions`, {
+      const cleanedSuggestions = (suggestions || []).map((s) => ({
+        source_column: String(s?.source_column || ""),
+        target_field: s?.target_field ? String(s.target_field) : null,
+        confidence: Number.isFinite(Number(s?.confidence)) ? Number(s.confidence) : 0,
+      }));
+
+      const qRes = await fetch(`${API_BASE}/generate-questions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ suggestions }),
+        body: JSON.stringify({ suggestions: cleanedSuggestions }),
       });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      setQuestions(data.questions || []);
+      if (!qRes.ok) throw new Error(await qRes.text());
+      const qData = await qRes.json();
+      setQuestions(qData.questions || []);
       setQIndex(0);
     } catch (e) {
       setError(String(e.message || e));
     } finally {
       setBusy(false);
+      setActionLoading((s) => ({ ...s, validate: false }));
     }
   }
 
@@ -137,10 +146,11 @@ export default function Home() {
 
   return (
     <main className="page">
+      <header className="topbar">
+        <div className="brand">DAFFODIL</div>
+      </header>
       <h1>Daffodil Data Onboarding Copilot</h1>
-      <p className="lead">
-        Target schema: {STANDARD_SCHEMA.join(", ")}
-      </p>
+      <p className="lead">Target schema: {STANDARD_SCHEMA.join(", ")}</p>
       <section className="card">
         <h2>Daffodil Accepted Format</h2>
         <ul>
@@ -148,6 +158,24 @@ export default function Home() {
             <li key={field}>{field}</li>
           ))}
         </ul>
+      </section>
+      <section className="card">
+        <h2>How The Flow Works</h2>
+        <p className="muted">
+          Upload customer data, let AI suggest schema mappings, confirm or edit mappings, validate
+          quality, answer low-confidence yes/no questions, and finalize onboarding.
+        </p>
+        <div className="flow">
+          <div className="flow-step">1. Upload CSV/Excel</div>
+          <div className="flow-arrow">→</div>
+          <div className="flow-step">2. AI Inference</div>
+          <div className="flow-arrow">→</div>
+          <div className="flow-step">3. Confirm Mapping</div>
+          <div className="flow-arrow">→</div>
+          <div className="flow-step">4. Validate Data</div>
+          <div className="flow-arrow">→</div>
+          <div className="flow-step">5. Clarify + Finalize</div>
+        </div>
       </section>
 
       <section className="card grid4">
@@ -162,7 +190,9 @@ export default function Home() {
       <section className="card">
         <h2>1) Upload File</h2>
         <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-        <button disabled={!file || busy} onClick={uploadFile}>Parse File</button>
+        <button disabled={!file || busy} onClick={uploadFile}>
+          {actionLoading.upload ? <><span className="spinner" /> Parsing...</> : "Parse File"}
+        </button>
       </section>
 
       {sampleRows.length > 0 && (
@@ -186,7 +216,9 @@ export default function Home() {
       {fileId && (
         <section className="card">
           <h2>2) Infer Schema</h2>
-          <button disabled={busy} onClick={inferSchema}>Run AI Schema Inference</button>
+          <button disabled={busy} onClick={inferSchema}>
+            {actionLoading.infer ? <><span className="spinner" /> Inferring...</> : "Run AI Schema Inference"}
+          </button>
         </section>
       )}
 
@@ -215,7 +247,9 @@ export default function Home() {
       {suggestions.length > 0 && (
         <section className="card">
           <h2>4) Validate</h2>
-          <button disabled={busy} onClick={runValidation}>Run Validation</button>
+          <button disabled={busy} onClick={runValidation}>
+            {actionLoading.validate ? <><span className="spinner" /> Validating...</> : "Run Validation"}
+          </button>
           {validation && (
             <>
               <p>
@@ -255,7 +289,7 @@ export default function Home() {
       {validation && (
         <section className="card">
           <h2>5) Clarification Questions</h2>
-          <button disabled={busy} onClick={generateQuestions}>Generate Yes/No Questions</button>
+          <p className="muted">Generated automatically during validation.</p>
           {questions.length > 0 && qIndex < questions.length && (
             <div className="question-box">
               <p>{questions[qIndex].question}</p>

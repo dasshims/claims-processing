@@ -127,7 +127,7 @@ def generate_questions(payload: GenerateQuestionsRequest) -> GenerateQuestionsRe
     low_conf = [
         s.model_dump()
         for s in payload.suggestions
-        if s.confidence < 0.8 and s.target_field is not None
+        if s.confidence < 0.9 or s.target_field is None
     ]
     questions = ai_service.generate_yes_no_questions(low_conf)
     return GenerateQuestionsResponse(questions=questions)
